@@ -2,10 +2,13 @@
 """
 Batch convert .LAS -> HAG (Height Above Ground) .LAS using PDAL.
 
-Pipeline per file:
+Default pipeline per file (for input LAS that does NOT already have ground classification):
   readers.las -> filters.smrf (ground classification)
                -> filters.hag_delaunay (compute HAG)
                -> writers.las (with extra_dims HeightAboveGround=float32)
+
+If --no-smrf is used, the tool skips ground re-classification and computes HAG
+from the existing Classification values in the input LAS.
 
 Requires: pdal (pip install pdal) or pdal CLI on PATH.
 
@@ -192,7 +195,9 @@ def batch_convert(
     if recursive:
         print("Mode: recursive (directory structure mirrored)")
     if skip_smrf:
-        print("Mode: --no-smrf (skip ground classification, use existing)")
+        print(
+            "Mode: --no-smrf (skip ground classification, use existing classification; input must already have valid ground class)"
+        )
     print()
 
     start = time.time()
@@ -222,7 +227,7 @@ def batch_convert(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Batch convert .LAS files to HAG (Height Above Ground) .LAS using PDAL"
+        description="Batch convert .LAS files to HAG (Height Above Ground) .LAS using PDAL. Default mode runs SMRF first; use --no-smrf only when input LAS already has valid ground classification."
     )
     parser.add_argument(
         "-i", "--input", default=None, help="Input directory containing .las files"
@@ -251,7 +256,7 @@ def main():
     parser.add_argument(
         "--no-smrf",
         action="store_true",
-        help="Skip ground classification (use when input already has classification)",
+        help="Skip ground classification and use existing Classification to compute HAG (use ONLY when input already has valid ground classification)",
     )
     args = parser.parse_args()
 

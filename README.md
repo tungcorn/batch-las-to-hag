@@ -19,10 +19,10 @@ Recursively scans input directory, mirrors folder structure to output, and runs 
 conda create -n pdal_env -c conda-forge python=3.11 python-pdal -y
 conda activate pdal_env
 
-# Convert all .las files recursively
+# Convert all .las files recursively (for LAS not yet ground-classified)
 python batch_las_to_hag.py -i "E:\LasData" -r
 
-# Already classified? Skip SMRF
+# Already classified / want to preserve multi-class labels? Skip SMRF
 python batch_las_to_hag.py -i "E:\LasData" -r --no-smrf
 
 # Resume after interruption
@@ -38,15 +38,15 @@ python batch_las_to_hag.py -i "E:\LasData" -r --skip-existing
 | `-r`, `--recursive` | Recursively find `.las` files, mirror directory structure |
 | `-b`, `--batch` | Batch file with `input -> output` pairs per line |
 | `--skip-existing` | Skip files already converted (non-empty output exists) |
-| `--no-smrf` | Skip ground classification (use existing classification) |
+| `--no-smrf` | Skip ground classification and use existing classification (only when input already has valid ground classification) |
 
 ### PDAL Pipeline
 
 Each file goes through:
 
 1. `readers.las` — read input
-2. `filters.smrf` — ground classification *(skipped with `--no-smrf`)*
-3. `filters.hag_delaunay` — compute Height Above Ground from ground points
+2. `filters.smrf` — ground classification *(skipped with `--no-smrf`; by default SMRF assigns ground=2 and non-ground=1)*
+3. `filters.hag_delaunay` — compute Height Above Ground from ground points already marked in `Classification`
 4. `writers.las` — write output with `HeightAboveGround=float32`
 
 ### Requirements
@@ -73,10 +73,10 @@ Quét đệ quy thư mục đầu vào, tạo thư mục đầu ra với cấu t
 conda create -n pdal_env -c conda-forge python=3.11 python-pdal -y
 conda activate pdal_env
 
-# Chuyển tất cả file .las đệ quy
+# Chuyển tất cả file .las đệ quy (cho LAS chưa phân lớp ground)
 python batch_las_to_hag.py -i "E:\LasData" -r
 
-# File đã phân lớp? Bỏ qua SMRF
+# File đã phân lớp / muốn giữ nguyên multi-class? Bỏ qua SMRF
 python batch_las_to_hag.py -i "E:\LasData" -r --no-smrf
 
 # Chạy lại sau khi bị gián đoạn
@@ -92,15 +92,15 @@ python batch_las_to_hag.py -i "E:\LasData" -r --skip-existing
 | `-r`, `--recursive` | Tìm đệ quy file `.las`, giữ nguyên cấu trúc thư mục |
 | `-b`, `--batch` | File batch chứa các cặp `input -> output` mỗi dòng |
 | `--skip-existing` | Bỏ qua file đã chuyển (output tồn tại và dung lượng > 0) |
-| `--no-smrf` | Bỏ qua phân lớp mặt đất (dùng khi file đã có classification) |
+| `--no-smrf` | Bỏ qua phân lớp mặt đất và dùng classification hiện có (chỉ dùng khi file đầu vào đã có ground classification hợp lệ) |
 
 ### Pipeline PDAL
 
 Mỗi file được xử lý qua:
 
 1. `readers.las` — đọc file đầu vào
-2. `filters.smrf` — phân lớp mặt đất *(bỏ qua nếu dùng `--no-smrf`)*
-3. `filters.hag_delaunay` — tính Height Above Ground từ điểm mặt đất
+2. `filters.smrf` — phân lớp mặt đất *(bỏ qua nếu dùng `--no-smrf`; mặc định SMRF gán ground=2 và non-ground=1)*
+3. `filters.hag_delaunay` — tính Height Above Ground từ các điểm mặt đất đã được đánh dấu trong `Classification`
 4. `writers.las` — ghi file đầu ra với `HeightAboveGround=float32`
 
 ### Yêu Cầu

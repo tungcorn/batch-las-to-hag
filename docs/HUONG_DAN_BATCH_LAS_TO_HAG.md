@@ -53,23 +53,29 @@ python batch_las_to_hag.py -i "E:\LasData" -o "E:\LasData_hag"
 
 Chuyển tất cả file `.las` trong `E:\LasData` sang `E:\LasData_hag`.
 
-### 2.2. ⭐ Chuyển đệ quy (giữ cấu trúc thư mục) — KHUYẾN NGHỊ
+### 2.2. ⭐ Chuyển đệ quy (giữ cấu trúc thư mục) — KHUYẾN NGHỊ cho file LAS chưa phân lớp ground
 
 ```
 python batch_las_to_hag.py -i "E:\DuLieu" -r
 ```
 
-**Đây là cách dùng chính.** Chỉ cần trỏ vào thư mục gốc, tool tự xử lý toàn bộ:
+**Đây là cách dùng chính khi file LAS đầu vào chưa có ground classification sẵn.** Chỉ cần trỏ vào thư mục gốc, tool tự xử lý toàn bộ:
 
 1. Tìm tất cả file `.las` trong `E:\DuLieu` và các thư mục con.
 2. Tự tạo thư mục output `E:\DuLieu_hag` (cùng cấp với input, thêm hậu tố `_hag`).
 3. Giữ nguyên cấu trúc thư mục con bên trong.
 
-Kết hợp thêm `--skip-existing` và `--no-smrf` nếu cần:
+Lệnh này sẽ chạy `filters.smrf` để phân lớp ground trước, rồi mới tính `HeightAboveGround`.
+
+> Nếu file đầu vào **đã có ground classification hoặc đã có multi-class cần giữ nguyên**, **không nên dùng lệnh 2.2 dạng mặc định này**. Khi đó phải thêm `--no-smrf` như mục **2.5** để tránh bị đổi `Classification` về bài toán ground / non-ground.
+
+Nếu chỉ muốn bỏ qua file đã xử lý rồi, thêm `--skip-existing`:
 
 ```
-python batch_las_to_hag.py -i "E:\DuLieu" -r --skip-existing --no-smrf
+python batch_las_to_hag.py -i "E:\DuLieu" -r --skip-existing
 ```
+
+Nếu file đã phân lớp sẵn và muốn giữ nguyên classification, xem mục **2.5**.
 
 ### 2.3. Đệ quy + chỉ định thư mục output
 
@@ -85,13 +91,20 @@ python batch_las_to_hag.py -i "E:\DuLieu" -r --skip-existing
 
 Nếu file output đã tồn tại và có dung lượng > 0 thì bỏ qua, không chuyển lại. Hữu ích khi chạy lại sau khi bị gián đoạn.
 
-### 2.5. File đã phân lớp mặt đất (bỏ qua SMRF)
+### 2.5. File đã phân lớp mặt đất hoặc đã có multi-class cần giữ nguyên (bỏ qua SMRF)
 
 ```
 python batch_las_to_hag.py -i "E:\DuLieu" -r --no-smrf
 ```
 
-Nếu file `.las` **đã có classification ground** (ví dụ từ LiDAR360 hoặc phân lớp thủ công), thêm `--no-smrf` để bỏ qua bước phân lớp mặt đất. Tool sẽ dùng classification có sẵn để tính HAG, kết quả chính xác hơn.
+Nếu file `.las` **đã có classification ground** (ví dụ từ LiDAR360 hoặc phân lớp thủ công), hoặc **đã có nhãn multi-class và bạn muốn giữ nguyên nhãn đó**, thêm `--no-smrf` để bỏ qua bước phân lớp mặt đất. Tool sẽ dùng classification có sẵn để tính HAG.
+
+Ý nghĩa thực tế:
+
+- **Không có `--no-smrf`** → chạy `filters.smrf`, có thể làm `Classification` bị thu về ground / non-ground.
+- **Có `--no-smrf`** → không phân lớp lại, chỉ tính thêm `HeightAboveGround` dựa trên ground points đã được đánh dấu sẵn.
+
+> Chỉ dùng `--no-smrf` khi file đầu vào thực sự đã có ground classification đúng. Nếu file chưa có ground mà vẫn bỏ qua SMRF, kết quả `HeightAboveGround` có thể sai.
 
 ### 2.6. Chạy hàng loạt từ file batch
 
@@ -110,6 +123,12 @@ python batch_las_to_hag.py -b batch.txt --skip-existing
 
 Mỗi dòng là 1 cặp `thư_mục_input -> thư_mục_output`. Dòng trống hoặc bắt đầu bằng `#` sẽ bị bỏ qua.
 
+Nếu các thư mục trong `batch.txt` chứa file đã có ground classification sẵn và bạn muốn giữ nguyên classification hiện có, thêm `--no-smrf`:
+
+```
+python batch_las_to_hag.py -b batch.txt --skip-existing --no-smrf
+```
+
 ---
 
 ## 3. Tham Số Đầy Đủ
@@ -121,18 +140,26 @@ Mỗi dòng là 1 cặp `thư_mục_input -> thư_mục_output`. Dòng trống h
 | `-r`, `--recursive` | Tìm đệ quy trong thư mục con. Nếu không có `-o`, tự tạo `{input}_hag` |
 | `-b`, `--batch` | File text chứa các cặp `input -> output`, mỗi dòng 1 cặp |
 | `--skip-existing` | Bỏ qua file output đã tồn tại (dung lượng > 0) |
-| `--no-smrf` | Bỏ qua phân lớp mặt đất (dùng khi file đã có classification sẵn) |
+| `--no-smrf` | Bỏ qua phân lớp mặt đất; chỉ dùng khi file đã có ground classification sẵn hoặc muốn giữ nguyên multi-class hiện có. Không dùng cho file chưa có ground classification |
 
 ---
 
 ## 4. Pipeline PDAL Mỗi File
 
-Mỗi file `.las` được xử lý qua các bước (mặc định):
+Mỗi file `.las` được xử lý qua các bước (mặc định, khi **không** dùng `--no-smrf`):
 
 1. **readers.las**: Đọc file LAS đầu vào.
-2. **filters.smrf**: Phân lớp mặt đất (ground classification). **Bỏ qua nếu dùng `--no-smrf`.**
-3. **filters.hag_delaunay**: Tính Height Above Ground dựa trên tam giác Delaunay từ điểm mặt đất.
+2. **filters.smrf**: Phân lớp mặt đất (ground classification). Theo mặc định của PDAL, bước này gán **ground = class 2** và **non-ground = class 1**. **Bỏ qua nếu dùng `--no-smrf`.**
+3. **filters.hag_delaunay**: Tính Height Above Ground dựa trên các điểm ground đã được đánh dấu trước đó.
 4. **writers.las**: Ghi file LAS đầu ra với trường bổ sung `HeightAboveGround=float32`.
+
+Nếu dùng `--no-smrf`, pipeline thực tế sẽ là:
+
+1. **readers.las**
+2. **filters.hag_delaunay**
+3. **writers.las**
+
+Trong trường hợp này, `filters.hag_delaunay` không tự phân lớp ground mới, mà dùng ground class đã có sẵn trong file đầu vào.
 
 ---
 
