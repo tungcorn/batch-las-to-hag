@@ -55,23 +55,29 @@ python batch_las_to_hag.py -i "E:\LasData" -o "E:\LasData_hag"
 
 Converts all `.las` files in `E:\LasData` to `E:\LasData_hag`.
 
-### 2.2. ⭐ Recursive conversion (mirrors directory structure) — RECOMMENDED
+### 2.2. ⭐ Recursive conversion (mirrors directory structure) — RECOMMENDED for unclassified LAS files
 
 ```
 python batch_las_to_hag.py -i "E:\Data" -r
 ```
 
-**This is the main usage.** Just point to the root directory, the tool handles everything:
+**This is the main usage when input LAS files do not yet have ground classification.** Just point to the root directory, the tool handles everything:
 
 1. Finds all `.las` files in `E:\Data` and subdirectories.
 2. Auto-creates output directory `E:\Data_hag` (sibling to input, with `_hag` suffix).
 3. Mirrors the subdirectory structure.
 
-Combine with `--skip-existing` and `--no-smrf` as needed:
+This command runs `filters.smrf` to classify ground points first, then computes `HeightAboveGround`.
+
+> If your input files **already have ground classification or multi-class labels you want to preserve**, **do not use this default command**. Add `--no-smrf` as shown in section **2.5**, otherwise SMRF will overwrite existing `Classification` with ground/non-ground only.
+
+To skip already-processed files, add `--skip-existing`:
 
 ```
-python batch_las_to_hag.py -i "E:\Data" -r --skip-existing --no-smrf
+python batch_las_to_hag.py -i "E:\Data" -r --skip-existing
 ```
+
+If your files are already classified and you want to preserve classification, see section **2.5**.
 
 ### 2.3. Recursive + specify output directory
 
