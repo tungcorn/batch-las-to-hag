@@ -4,13 +4,22 @@
 
 📖 **Usage / Hướng dẫn sử dụng:** [English](docs/USAGE_EN.md) | [Tiếng Việt](docs/HUONG_DAN_BATCH_LAS_TO_HAG.md)
 
+Includes two ground filtering tools:
+
+| Tool | Algorithm | Ground filter + HAG | Dependency |
+|------|-----------|---------------------|------------|
+| `batch_las_to_hag.py` | SMRF | ✅ ground + HAG | PDAL |
+| `batch_csf.py` | CSF | ⚠️ ground only (no HAG) | laspy, cloth-simulation-filter |
+
 ---
 
 ## English
 
-Batch convert `.las` files to HAG (Height Above Ground) `.las` using PDAL.
+Batch ground filtering and HAG (Height Above Ground) computation for `.las` files.
 
-Recursively scans input directory, mirrors folder structure to output, and runs PDAL pipeline (SMRF ground classification → HAG Delaunay → write with `HeightAboveGround` extra dim) on each file. Output files get `_hag` suffix (e.g. `scan01.las` → `scan01_hag.las`).
+### batch_las_to_hag.py (SMRF)
+
+Runs PDAL pipeline: SMRF ground classification → HAG Delaunay → write with `HeightAboveGround` extra dim. Output files get `_hag` suffix.
 
 ### Quick Start
 
@@ -65,13 +74,43 @@ PDAL installed via one of:
 
 Auto-detects Python bindings first, falls back to CLI subprocess.
 
+### batch_csf.py (CSF)
+
+Runs Cloth Simulation Filter for ground classification. Output files get `_csf` suffix. **Does not compute HAG** — only classifies ground (class 2) vs non-ground (class 0).
+
+```bash
+pip install laspy cloth-simulation-filter
+
+# Classify ground recursively
+python batch_csf.py -i "E:\LasData" -o "E:\LasData_csf" -r
+
+# Custom parameters (mountain terrain)
+python batch_csf.py -i "E:\LasData" -o "E:\LasData_csf" -r --cloth-resolution 0.5 --rigidness 1
+
+# Resume
+python batch_csf.py -i "E:\LasData" -o "E:\LasData_csf" -r --skip-existing
+```
+
+| Flag | Description |
+|------|-------------|
+| `-i`, `--input` | Input directory containing `.las` files |
+| `-o`, `--output` | Output directory for classified `.las` files |
+| `-r`, `--recursive` | Recursively find `.las` files |
+| `--skip-existing` | Skip files already converted |
+| `--cloth-resolution` | Cloth grid resolution (default: 2.0). Smaller = more detail |
+| `--rigidness` | Cloth rigidness: 1=mountain, 2=complex, 3=flat (default: 2) |
+| `--threshold` | Distance threshold for ground/non-ground (default: 0.5) |
+| `--no-slope-smooth` | Disable slope post-processing |
+
 ---
 
 ## Tiếng Việt
 
-Chuyển hàng loạt file `.las` thành file HAG (Height Above Ground) `.las` bằng PDAL.
+Lọc mặt đất hàng loạt và tính HAG (Height Above Ground) cho file `.las`.
 
-Quét đệ quy thư mục đầu vào, tạo thư mục đầu ra với cấu trúc giống hệt, chạy pipeline PDAL (phân lớp mặt đất SMRF → tính HAG Delaunay → ghi file với trường `HeightAboveGround`) cho từng file. File đầu ra có đuôi `_hag` (ví dụ `scan01.las` → `scan01_hag.las`).
+### batch_las_to_hag.py (SMRF)
+
+Chạy pipeline PDAL: phân lớp mặt đất SMRF → tính HAG Delaunay → ghi file với trường `HeightAboveGround`. File đầu ra có đuôi `_hag`.
 
 ### Bắt Đầu Nhanh
 
@@ -125,6 +164,34 @@ Cài PDAL bằng một trong hai cách:
 2. **PDAL CLI** trên PATH: https://pdal.io/en/latest/download.html
 
 Tool tự phát hiện Python bindings trước, fallback sang CLI.
+
+### batch_csf.py (CSF)
+
+Chạy Cloth Simulation Filter để phân lớp mặt đất. File đầu ra có đuôi `_csf`. **Không tính HAG** — chỉ phân lớp ground (class 2) vs non-ground (class 0).
+
+```bash
+pip install laspy cloth-simulation-filter
+
+# Phân lớp đệ quy
+python batch_csf.py -i "E:\LasData" -o "E:\LasData_csf" -r
+
+# Tuỳ chỉnh tham số (địa hình đồi núi)
+python batch_csf.py -i "E:\LasData" -o "E:\LasData_csf" -r --cloth-resolution 0.5 --rigidness 1
+
+# Chạy lại sau gián đoạn
+python batch_csf.py -i "E:\LasData" -o "E:\LasData_csf" -r --skip-existing
+```
+
+| Tham số | Mô tả |
+|---------|-------|
+| `-i`, `--input` | Thư mục chứa file `.las` đầu vào |
+| `-o`, `--output` | Thư mục chứa file `.las` đã phân lớp |
+| `-r`, `--recursive` | Tìm đệ quy file `.las` |
+| `--skip-existing` | Bỏ qua file đã chuyển |
+| `--cloth-resolution` | Độ phân giải lưới vải (mặc định: 2.0). Nhỏ hơn = chi tiết hơn |
+| `--rigidness` | Độ cứng vải: 1=đồi núi, 2=phức tạp, 3=bằng phẳng (mặc định: 2) |
+| `--threshold` | Ngưỡng khoảng cách ground/non-ground (mặc định: 0.5) |
+| `--no-slope-smooth` | Tắt slope post-processing |
 
 ---
 
