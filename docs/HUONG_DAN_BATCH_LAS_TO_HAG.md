@@ -129,6 +129,21 @@ Nếu các thư mục trong `batch.txt` chứa file đã có ground classificati
 python batch_las_to_hag.py -b batch.txt --skip-existing --no-smrf
 ```
 
+### 2.7. Tuỳ chỉnh tham số SMRF
+
+```
+python batch_las_to_hag.py -i "E:\DuLieu" -r --slope 0.05 --window 30 --threshold 0.45 --scalar 1.1
+```
+
+Tuỳ chỉnh SMRF cho từng loại địa hình. Với địa hình đồi núi nhiều cây, dùng slope thấp hơn và window lớn hơn. Các tham số chỉ có tác dụng khi SMRF đang bật (không dùng `--no-smrf`).
+
+| Tham số | Mặc định | Mô tả |
+|---------|----------|-------|
+| `--slope` | 0.15 | Ngưỡng độ dốc. Thấp hơn = lọc ground chặt hơn |
+| `--window` | 18 | Kích thước cửa sổ tối đa (mét). Lớn hơn = mô hình địa hình mượt hơn |
+| `--threshold` | 0.5 | Ngưỡng độ cao. Ngưỡng phân biệt ground/non-ground |
+| `--scalar` | 1.25 | Hệ số co giãn. Hệ số nhân cho ngưỡng hình thái học |
+
 ---
 
 ## 3. Tham Số Đầy Đủ
@@ -141,6 +156,10 @@ python batch_las_to_hag.py -b batch.txt --skip-existing --no-smrf
 | `-b`, `--batch` | File text chứa các cặp `input -> output`, mỗi dòng 1 cặp |
 | `--skip-existing` | Bỏ qua file output đã tồn tại (dung lượng > 0) |
 | `--no-smrf` | Bỏ qua phân lớp mặt đất; chỉ dùng khi file đã có ground classification sẵn hoặc muốn giữ nguyên multi-class hiện có. Không dùng cho file chưa có ground classification |
+| `--slope` | Tham số slope SMRF (mặc định: 0.15). Thấp hơn = lọc ground chặt hơn |
+| `--window` | Kích thước cửa sổ SMRF tính bằng mét (mặc định: 18). Lớn hơn = mô hình địa hình mượt hơn |
+| `--threshold` | Ngưỡng độ cao SMRF (mặc định: 0.5). Ngưỡng phân biệt ground/non-ground |
+| `--scalar` | Hệ số co giãn SMRF (mặc định: 1.25). Hệ số nhân cho ngưỡng hình thái học |
 
 ---
 

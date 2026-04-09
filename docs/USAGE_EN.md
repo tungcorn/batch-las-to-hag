@@ -118,6 +118,21 @@ python batch_las_to_hag.py -b batch.txt --skip-existing
 
 Each line is an `input_dir -> output_dir` pair. Empty lines or lines starting with `#` are ignored.
 
+### 2.7. Custom SMRF parameters
+
+```
+python batch_las_to_hag.py -i "E:\Data" -r --slope 0.05 --window 30 --threshold 0.45 --scalar 1.1
+```
+
+Tune SMRF for specific terrain. For hilly terrain with dense vegetation, use lower slope and larger window. Parameters are only used when SMRF is active (without `--no-smrf`).
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--slope` | 0.15 | Slope threshold. Lower = stricter ground detection |
+| `--window` | 18 | Max window size (meters). Larger = smoother terrain model |
+| `--threshold` | 0.5 | Elevation threshold. Height cutoff for ground/non-ground |
+| `--scalar` | 1.25 | Elevation scalar. Scaling factor for morphological threshold |
+
 ---
 
 ## 3. All Options
@@ -130,6 +145,10 @@ Each line is an `input_dir -> output_dir` pair. Empty lines or lines starting wi
 | `-b`, `--batch` | Text file with `input -> output` pairs, one per line |
 | `--skip-existing` | Skip output files that already exist (size > 0) |
 | `--no-smrf` | Skip ground classification (use when input already has classification) |
+| `--slope` | SMRF slope parameter (default: 0.15). Lower = stricter ground detection |
+| `--window` | SMRF max window size in meters (default: 18). Larger = smoother terrain model |
+| `--threshold` | SMRF elevation threshold (default: 0.5). Height cutoff for ground/non-ground |
+| `--scalar` | SMRF elevation scalar (default: 1.25). Scaling factor for morphological threshold |
 
 ---
 

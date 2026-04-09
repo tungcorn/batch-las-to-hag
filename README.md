@@ -22,6 +22,9 @@ conda activate pdal_env
 # Convert all .las files recursively (for LAS not yet ground-classified)
 python batch_las_to_hag.py -i "E:\LasData" -r
 
+# Custom SMRF parameters (for hilly terrain with dense vegetation)
+python batch_las_to_hag.py -i "E:\LasData" -r --slope 0.05 --window 30 --threshold 0.45 --scalar 1.1
+
 # Already classified / want to preserve multi-class labels? Skip SMRF
 python batch_las_to_hag.py -i "E:\LasData" -r --no-smrf
 
@@ -39,6 +42,10 @@ python batch_las_to_hag.py -i "E:\LasData" -r --skip-existing
 | `-b`, `--batch` | Batch file with `input -> output` pairs per line |
 | `--skip-existing` | Skip files already converted (non-empty output exists) |
 | `--no-smrf` | Skip ground classification and use existing classification (only when input already has valid ground classification) |
+| `--slope` | SMRF slope parameter (default: 0.15). Lower = stricter ground detection |
+| `--window` | SMRF max window size in meters (default: 18). Larger = smoother terrain model |
+| `--threshold` | SMRF elevation threshold (default: 0.5). Height cutoff for ground/non-ground |
+| `--scalar` | SMRF elevation scalar (default: 1.25). Scaling factor for morphological threshold |
 
 ### PDAL Pipeline
 
@@ -76,6 +83,9 @@ conda activate pdal_env
 # Chuyển tất cả file .las đệ quy (cho LAS chưa phân lớp ground)
 python batch_las_to_hag.py -i "E:\LasData" -r
 
+# Tuỳ chỉnh tham số SMRF (cho địa hình đồi núi nhiều cây)
+python batch_las_to_hag.py -i "E:\LasData" -r --slope 0.05 --window 30 --threshold 0.45 --scalar 1.1
+
 # File đã phân lớp / muốn giữ nguyên multi-class? Bỏ qua SMRF
 python batch_las_to_hag.py -i "E:\LasData" -r --no-smrf
 
@@ -93,6 +103,10 @@ python batch_las_to_hag.py -i "E:\LasData" -r --skip-existing
 | `-b`, `--batch` | File batch chứa các cặp `input -> output` mỗi dòng |
 | `--skip-existing` | Bỏ qua file đã chuyển (output tồn tại và dung lượng > 0) |
 | `--no-smrf` | Bỏ qua phân lớp mặt đất và dùng classification hiện có (chỉ dùng khi file đầu vào đã có ground classification hợp lệ) |
+| `--slope` | Tham số slope SMRF (mặc định: 0.15). Thấp hơn = lọc ground chặt hơn |
+| `--window` | Kích thước cửa sổ SMRF tính bằng mét (mặc định: 18). Lớn hơn = mô hình địa hình mượt hơn |
+| `--threshold` | Ngưỡng độ cao SMRF (mặc định: 0.5). Ngưỡng phân biệt ground/non-ground |
+| `--scalar` | Hệ số co giãn SMRF (mặc định: 1.25). Hệ số nhân cho ngưỡng hình thái học |
 
 ### Pipeline PDAL
 

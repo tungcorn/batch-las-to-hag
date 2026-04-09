@@ -50,14 +50,32 @@ def _pdal_cli_available():
         return False
 
 
-def build_pipeline_json(input_path, output_path, skip_smrf=False):
+def build_pipeline_json(
+    input_path,
+    output_path,
+    skip_smrf=False,
+    smrf_slope=None,
+    smrf_window=None,
+    smrf_threshold=None,
+    smrf_scalar=None,
+):
     pipeline = [
         {"type": "readers.las", "filename": str(input_path)},
     ]
     if not skip_smrf:
-        pipeline.append(
-            {"type": "filters.smrf", "returns": "first,intermediate,last,only"}
-        )
+        smrf_config = {
+            "type": "filters.smrf",
+            "returns": "first,intermediate,last,only",
+        }
+        if smrf_slope is not None:
+            smrf_config["slope"] = smrf_slope
+        if smrf_window is not None:
+            smrf_config["window"] = smrf_window
+        if smrf_threshold is not None:
+            smrf_config["threshold"] = smrf_threshold
+        if smrf_scalar is not None:
+            smrf_config["scalar"] = smrf_scalar
+        pipeline.append(smrf_config)
     pipeline.append({"type": "filters.hag_delaunay"})
     pipeline.append(
         {
@@ -69,17 +87,49 @@ def build_pipeline_json(input_path, output_path, skip_smrf=False):
     return json.dumps(pipeline, indent=2)
 
 
-def convert_one_file_python(input_path, output_path, skip_smrf):
+def convert_one_file_python(
+    input_path,
+    output_path,
+    skip_smrf,
+    smrf_slope=None,
+    smrf_window=None,
+    smrf_threshold=None,
+    smrf_scalar=None,
+):
     import pdal
 
-    pipeline_json = build_pipeline_json(input_path, output_path, skip_smrf)
+    pipeline_json = build_pipeline_json(
+        input_path,
+        output_path,
+        skip_smrf,
+        smrf_slope,
+        smrf_window,
+        smrf_threshold,
+        smrf_scalar,
+    )
     pipeline = pdal.Pipeline(pipeline_json)
     count = pipeline.execute()
     return count
 
 
-def convert_one_file_cli(input_path, output_path, skip_smrf):
-    pipeline_json = build_pipeline_json(input_path, output_path, skip_smrf)
+def convert_one_file_cli(
+    input_path,
+    output_path,
+    skip_smrf,
+    smrf_slope=None,
+    smrf_window=None,
+    smrf_threshold=None,
+    smrf_scalar=None,
+):
+    pipeline_json = build_pipeline_json(
+        input_path,
+        output_path,
+        skip_smrf,
+        smrf_slope,
+        smrf_window,
+        smrf_threshold,
+        smrf_scalar,
+    )
 
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".json", delete=False, encoding="utf-8"
@@ -101,7 +151,16 @@ def convert_one_file_cli(input_path, output_path, skip_smrf):
         os.unlink(tmp_path)
 
 
-def convert_one_file(input_path, output_path, use_python_bindings, skip_smrf):
+def convert_one_file(
+    input_path,
+    output_path,
+    use_python_bindings,
+    skip_smrf,
+    smrf_slope=None,
+    smrf_window=None,
+    smrf_threshold=None,
+    smrf_scalar=None,
+):
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -115,13 +174,29 @@ def convert_one_file(input_path, output_path, use_python_bindings, skip_smrf):
             return False
 
         if use_python_bindings:
-            count = convert_one_file_python(input_path, output_path, skip_smrf)
+            count = convert_one_file_python(
+                input_path,
+                output_path,
+                skip_smrf,
+                smrf_slope,
+                smrf_window,
+                smrf_threshold,
+                smrf_scalar,
+            )
             out_size_mb = output_path.stat().st_size / 1024 / 1024
             print(
                 f"  OK: {input_path.name} -> {output_path.name} ({count:,} pts, {out_size_mb:.1f} MB)"
             )
         else:
-            convert_one_file_cli(input_path, output_path, skip_smrf)
+            convert_one_file_cli(
+                input_path,
+                output_path,
+                skip_smrf,
+                smrf_slope,
+                smrf_window,
+                smrf_threshold,
+                smrf_scalar,
+            )
             out_size_mb = output_path.stat().st_size / 1024 / 1024
             print(
                 f"  OK: {input_path.name} -> {output_path.name} ({out_size_mb:.1f} MB)"
@@ -168,7 +243,16 @@ def parse_batch_file(batch_path):
 
 
 def batch_convert(
-    input_path, output_path, recursive, skip_existing, use_python_bindings, skip_smrf
+    input_path,
+    output_path,
+    recursive,
+    skip_existing,
+    use_python_bindings,
+    skip_smrf,
+    smrf_slope=None,
+    smrf_window=None,
+    smrf_threshold=None,
+    smrf_scalar=None,
 ):
     if not input_path.is_dir():
         print(f"ERROR: Input directory not found: {input_path}")
@@ -198,6 +282,16 @@ def batch_convert(
         print(
             "Mode: --no-smrf (skip ground classification, use existing classification; input must already have valid ground class)"
         )
+    else:
+        slope_str = f"{smrf_slope}" if smrf_slope is not None else "0.15 (default)"
+        window_str = f"{smrf_window}" if smrf_window is not None else "18 (default)"
+        threshold_str = (
+            f"{smrf_threshold}" if smrf_threshold is not None else "0.5 (default)"
+        )
+        scalar_str = f"{smrf_scalar}" if smrf_scalar is not None else "1.25 (default)"
+        print(
+            f"SMRF params: slope={slope_str}, window={window_str}, threshold={threshold_str}, scalar={scalar_str}"
+        )
     print()
 
     start = time.time()
@@ -215,7 +309,16 @@ def batch_convert(
             skipped += 1
             continue
 
-        if convert_one_file(f, out_path, use_python_bindings, skip_smrf):
+        if convert_one_file(
+            f,
+            out_path,
+            use_python_bindings,
+            skip_smrf,
+            smrf_slope,
+            smrf_window,
+            smrf_threshold,
+            smrf_scalar,
+        ):
             ok += 1
         else:
             fail += 1
@@ -257,6 +360,30 @@ def main():
         "--no-smrf",
         action="store_true",
         help="Skip ground classification and use existing Classification to compute HAG (use ONLY when input already has valid ground classification)",
+    )
+    parser.add_argument(
+        "--slope",
+        type=float,
+        default=None,
+        help="SMRF slope parameter (PDAL default: 0.15). Lower = stricter ground detection",
+    )
+    parser.add_argument(
+        "--window",
+        type=float,
+        default=None,
+        help="SMRF max window size in meters (PDAL default: 18). Larger = smoother terrain model",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="SMRF elevation threshold (PDAL default: 0.5). Height cutoff for ground/non-ground",
+    )
+    parser.add_argument(
+        "--scalar",
+        type=float,
+        default=None,
+        help="SMRF elevation scalar (PDAL default: 1.25). Scaling factor for morphological threshold",
     )
     args = parser.parse_args()
 
@@ -310,6 +437,10 @@ def main():
                 skip_existing=args.skip_existing,
                 use_python_bindings=use_python,
                 skip_smrf=args.no_smrf,
+                smrf_slope=args.slope,
+                smrf_window=args.window,
+                smrf_threshold=args.threshold,
+                smrf_scalar=args.scalar,
             )
             total_ok += ok
             total_fail += fail
@@ -325,6 +456,10 @@ def main():
             args.skip_existing,
             use_python,
             args.no_smrf,
+            smrf_slope=args.slope,
+            smrf_window=args.window,
+            smrf_threshold=args.threshold,
+            smrf_scalar=args.scalar,
         )
 
 
